@@ -1,43 +1,81 @@
 import "../App.css";
 import Navbar from "../componentes/navbar";
-import { useState } from "react";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import {
+  doc,
+  serverTimestamp,
+  setDoc,
+  collection,
+  getDocs,
+  deleteDoc,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import { estudianteInputs } from "../estudiantesInputs";
 
 function Estudiantes() {
   const [error, setError] = useState(false);
-  const [data,setData] = useState({documento:""})
-  let dialogState = "create"
+  const [data, setData] = useState({ documento: "" });
+  const [dataTable, setDataTable] = useState([]);
+  let dialogState = "create";
 
-  const handleInput = (e)=>{
-    const id = e.target.id
-    const value = e.target.value
+  const fetchData = async () => {
+    let list = [];
+    try {
+      const querySnapshot = await getDocs(collection(db, "estudiantes"));
+      querySnapshot.forEach((doc) => {
+        // doc.data() is never undefined for query doc snapshots
+        list.push({ id: doc.id, ...doc.data() });
+      });
+      setDataTable(list);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-    setData({...data, [id]: value})
+  const handleInput = (e) => {
+    const id = e.target.id;
+    const value = e.target.value;
+
+    setData({ ...data, [id]: value });
   };
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    console.log("crear")
+    console.log("crear");
     try {
-      const res = await setDoc(doc(db, "estudiantes", data.documento), {
-        ...data,
-        timetamp: serverTimestamp(),
-      });
-      document.getElementById("closeModal").click()
-      document.getElementById("resetModal").click()
-      setError(false)
-      setData({})
-      console.log(res);
-    }catch(err){
-      setError(true)
-      console.log(err)
+      if (dataTable.find((est) => est.documento === data.documento)) {
+        setError(true);
+      } else {
+        await setDoc(doc(db, "estudiantes", data.documento), {
+          ...data,
+          timetamp: serverTimestamp(),
+        });
+        document.getElementById("closeModal").click();
+        document.getElementById("resetModal").click();
+        setError(false);
+        setData({});
+        fetchData()
+      }
+    } catch (err) {
+      setError(true);
     }
   };
+  const handleDelete = async (id)=>{
+
+    try {
+      await deleteDoc(doc(db, "estudiantes", id));
+      fetchData()
+      console.log("eliminado")
+    } catch (error) {
+      
+    }
+  }
   const handleEdit = (e) => {
     e.preventDefault();
-    console.log("editar")
+    console.log("editar");
   };
 
   return (
@@ -60,30 +98,32 @@ function Estudiantes() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <th scope="row">1</th>
-              <td>Mark</td>
-              <td>Otto</td>
-              <td>4</td>
-              <td>3</td>
-              <td>14</td>
-              <td>24/3/2023</td>
-              <td>
-                <div className="d-grid gap-2 d-md-flex justify-content-md-end">
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#formModal"
-                  >
-                    Editar
-                  </button>
-                  <button type="button" className="btn btn-danger">
-                    Eliminar
-                  </button>
-                </div>
-              </td>
-            </tr>
+            {dataTable.map((estudiante) => (
+              <tr key={estudiante.id}>
+                <th scope="row">{estudiante.id}</th>
+                <td>{estudiante.nombre}</td>
+                <td>{estudiante.apellido}</td>
+                <td>{estudiante.grado}</td>
+                <td>{estudiante.grupo}</td>
+                <td>{estudiante.edad}</td>
+                <td>{estudiante.timetamp.toDate().toLocaleDateString()}</td>
+                <td>
+                  <div className="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      data-bs-toggle="modal"
+                      data-bs-target="#formModal"
+                    >
+                      Editar
+                    </button>
+                    <button type="button" className="btn btn-danger" onClick={()=>handleDelete(estudiante.id)}>
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
 
@@ -110,7 +150,7 @@ function Estudiantes() {
             >
               <div className="modal-header">
                 <h2 className="modal-title fs-5" id="exampleModalLabel">
-                  { dialogState }
+                  {dialogState === "create" ? <span>Aniadir estudiante</span>:<span>Editar Estudiante</span>}
                 </h2>
                 <button
                   type="button"
@@ -121,38 +161,44 @@ function Estudiantes() {
                 ></button>
               </div>
               <div className="modal-body">
-                {estudianteInputs.map((input)=>(
-                <div className="mb-3 formInput" key={input.id}>
-                  <label htmlFor={input.id} className="form-label">
-                    {input.label}
-                  </label>
-                  <input
-                    className="form-control"
-                    id={input.id}
-                    type={input.type}
-                    onChange={handleInput}
-                    required
-                  />
-                </div>
+                {estudianteInputs.map((input) => (
+                  <div className="mb-3 formInput" key={input.id}>
+                   
+                    <input
+                      className="form-control"
+                      id={input.id}
+                      type={input.type}
+                      onChange={handleInput}
+                      placeholder={input.placeholder}
+                      required
+                    />
+                  </div>
                 ))}
 
                 {error && (
                   <span className="authError-msg">
-                    No se ha podido añadir al estudiante, puede que su documento a exista en la base de datos
+                    No se ha podido añadir al estudiante, puede que su documento
+                    a exista en la base de datos
                   </span>
                 )}
               </div>
               <div className="modal-footer">
-                <button type="reset" id="resetModal" className="btn btn-outline-light"></button>
+                <button
+                  type="reset"
+                  id="resetModal"
+                  className="btn btn-outline-dark"
+                >
+                  Reset
+                </button>
                 <button
                   type="button"
                   className="btn btn-secondary"
                   data-bs-dismiss="modal"
                 >
-                  Close
+                  Cerrar
                 </button>
-                <button type="submit" className="btn btn-primary" >
-                  Save changes
+                <button type="submit" className="btn btn-primary">
+                  Guardar
                 </button>
               </div>
             </form>

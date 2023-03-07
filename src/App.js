@@ -4,6 +4,7 @@ import { AuthContext } from "./context/AuthContext";
 import ErrorPage from "./error-page";
 import Estudiantes from "./routes/Estudiantes";
 import Login from "./routes/Login";
+import Home from "./routes/Home";
 
 function App() {
 
@@ -12,16 +13,15 @@ function App() {
 
 
     const RequireAuth = ({children}) => {
-        return currentUser !== null ? children : <Navigate to="/login" />
+        return currentUser ? children : <Navigate to="/login" />
     }
 
   return (
-    <BrowserRouter>
+    <BrowserRouter errorElement={<ErrorPage />}>
       <Routes>
-        <Route path="/" errorElement={<ErrorPage />}>
+          <Route path="/" element={<Home />}/>
           <Route path="login" element={<Login />}/>
-          <Route index path="estudiantes" element={<RequireAuth><Estudiantes /></RequireAuth> }/>
-        </Route>
+          <Route path="estudiantes" element={<RequireAuth><Estudiantes /></RequireAuth>}/>
       </Routes>
     </BrowserRouter>
   );

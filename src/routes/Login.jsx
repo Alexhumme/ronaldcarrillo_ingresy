@@ -38,7 +38,7 @@ function Login() {
 
   return (
     <div className="App">
-      <Navbar auth={false} />
+      {Navbar(false)}
       <main className="container-formulario card">
         <div className='card-header'> <h2>Ingresa</h2> </div>
         <div className='card-body'>

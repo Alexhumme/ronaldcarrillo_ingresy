@@ -1,25 +1,31 @@
-import { signOut } from "firebase/auth";
+import { getAuth,signOut } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+
 
 export default function NavBar(auth = false) {
-  let logOut;
-
-    
-
-  logOut = (
-    <li className="nav-item">
-      <a className="nav-link active" aria-current="page" href="#">
-        LogOut
-      </a>
-    </li>
-  );
-
+  const navigate = useNavigate()
+  const logOut = ()=>{
+    const auth = getAuth();
+    signOut(auth).then(() => {
+      navigate("/login")
+      // Sign-out successful.
+    }).catch((error) => {
+      console.log(error)
+      // An error happened.
+    });
+  };
+  
   return (
     <nav className="navbar navbar-expand-lg bg-body-tertiary fixed-top">
       <div className="container-fluid">
-        <a className="navbar-brand" href="#">
+        <a className="navbar-brand" href="/">
           Ingresy
         </a>
-        <ul className="navbar-nav">{logOut}</ul>
+        {
+          auth 
+          ? (<ul className="navbar-nav"><button className="btn btn-outline-primary" onClick={()=>logOut()}>logOut</button></ul>)
+          : <span></span>
+        }
       </div>
     </nav>
   );
