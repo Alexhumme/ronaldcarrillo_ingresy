@@ -109,14 +109,6 @@ function Estudiantes() {
                 <td>{estudiante.timetamp.toDate().toLocaleDateString()}</td>
                 <td>
                   <div className="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      data-bs-toggle="modal"
-                      data-bs-target="#formModal"
-                    >
-                      Editar
-                    </button>
                     <button type="button" className="btn btn-danger" onClick={()=>handleDelete(estudiante.id)}>
                       Eliminar
                     </button>
